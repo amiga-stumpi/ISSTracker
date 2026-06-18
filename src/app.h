@@ -18,6 +18,6 @@
 #define ISS_LANG_EN 1
 #define ISS_LANG_PL 2
 typedef struct IssPosition { WORD lat_cd; WORD lon_cd; ULONG timestamp; UBYTE valid; } IssPosition;
-typedef struct IssTrackerApp { IssPosition current; IssPosition trail[ISS_TRAIL_MAX]; UWORD trail_head; UWORD trail_count; UBYTE show_trail; UBYTE auto_update; UBYTE blink; UBYTE status; UBYTE light_state; UBYTE surface_state; UBYTE status_page; UBYTE language; char status_text[80]; char info_text[128]; WORD win_left; WORD win_top; WORD win_width; WORD win_height; UWORD update_interval_min; } IssTrackerApp;
+typedef struct IssTrackerApp { IssPosition current; IssPosition trail[ISS_TRAIL_MAX]; UWORD trail_head; UWORD trail_count; UBYTE show_trail; UBYTE auto_update; UBYTE blink; UBYTE status; UBYTE light_state; UBYTE surface_state; UBYTE status_page; UBYTE language; UBYTE funfact_active; UWORD funfact_index; UWORD funfact_ticks; UWORD funfact_next_ticks; ULONG funfact_seed; char status_text[80]; char info_text[128]; WORD win_left; WORD win_top; WORD win_width; WORD win_height; UWORD update_interval_min; } IssTrackerApp;
 void iss_app_add_position(IssTrackerApp *app, const IssPosition *pos);
 #endif

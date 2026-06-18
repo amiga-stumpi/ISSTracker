@@ -11,9 +11,13 @@
 #include "astro.h"
 #include "worldmask.h"
 #include "config.h"
+#include "funfacts.h"
 #define BTN_W 58
 #define BTN_H 16
 #define AUTO_TICKS_PER_MIN 600UL
+#define FUNFACT_SHOW_TICKS 600U
+#define FUNFACT_MIN_TICKS 3000U
+#define FUNFACT_RANGE_TICKS 3001U
 #define MENU_SETTINGS 0
 #define MENU_HELP 1
 #define ITEM_UPDATE_INTERVAL 0
@@ -40,6 +44,8 @@ static const char *txt_interval_fail(IssTrackerApp *app){ if(app->language==ISS_
 static const char *txt_language_title(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache"; if(app->language==ISS_LANG_PL) return "Jezyk"; return "Language"; }
 static const char *txt_language_changed(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache geaendert"; if(app->language==ISS_LANG_PL) return "Jezyk zmieniony"; return "Language changed"; }
 static void apply_menu_texts(IssTrackerApp *app){ menu_settings.MenuName=(UBYTE *)txt_settings(app); mi_update_interval_text.IText=(STRPTR)txt_interval(app); mi_language_text.IText=(STRPTR)txt_language(app); }
+static UWORD next_funfact_delay(IssTrackerApp *app){ app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)(FUNFACT_MIN_TICKS+(UWORD)((app->funfact_seed>>16)%FUNFACT_RANGE_TICKS)); }
+static UWORD next_funfact_index(IssTrackerApp *app){ UWORD count; count=funfact_count(); if(count==0) return 0; app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)((app->funfact_seed>>16)%count); }
 static void button_layout(struct Window *win, WORD *by){ WORD mh; mh=(WORD)(win->Height-88); if(mh<80) mh=80; *by=(WORD)(18+mh+8); }
 static int in_rect(WORD mx, WORD my, WORD x, WORD y, WORD w, WORD h){ return mx>=x && mx<=x+w && my>=y && my<=y+h; }
 static void text_at(struct RastPort *rp, WORD x, WORD y, const char *s){ Move(rp,x,y); Text(rp,(STRPTR)s,strlen(s)); }
@@ -256,6 +262,8 @@ LONG gui_run(IssTrackerApp *app)
     SetMenuStrip(win,&menu_settings);
     draw_all(win,app);
     done=0;
+    if(app->funfact_seed==0) app->funfact_seed=(ULONG)win ^ 0x13572468UL;
+    if(app->funfact_next_ticks==0) app->funfact_next_ticks=next_funfact_delay(app);
     auto_ticks=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)-1;
     blink_ticks=0;
     status_ticks=0;
@@ -281,7 +289,9 @@ LONG gui_run(IssTrackerApp *app)
                     blink_ticks++;
                     status_ticks++;
                     if(blink_ticks>=5){ blink_ticks=0; app->blink=(UBYTE)!app->blink; if(app->current.valid) draw_iss_blink(win,app); }
-                    if(status_ticks>=50){ status_ticks=0; if(app->current.valid){ if(app->status_page<1 || app->status_page>=3) app->status_page=1; else app->status_page=(UBYTE)(app->status_page+1); } else app->status_page=0; draw_panel(win,app); }
+                    if(app->funfact_active){ app->funfact_ticks++; if(app->funfact_ticks>=FUNFACT_SHOW_TICKS){ app->funfact_active=0; app->funfact_ticks=0; app->funfact_next_ticks=next_funfact_delay(app); draw_panel(win,app); } }
+                    else if(app->funfact_next_ticks>0){ app->funfact_next_ticks--; if(app->funfact_next_ticks==0){ app->funfact_index=next_funfact_index(app); app->funfact_active=1; app->funfact_ticks=0; app->status_page=1; draw_panel(win,app); } }
+                    if(status_ticks>=50){ status_ticks=0; if(!app->funfact_active){ if(app->current.valid){ if(app->status_page<1 || app->status_page>=3) app->status_page=1; else app->status_page=(UBYTE)(app->status_page+1); } else app->status_page=0; draw_panel(win,app); } }
                     if(auto_ticks>=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)){ auto_ticks=0; update_now(win,app); }
                 } else if(cls==IDCMP_MOUSEBUTTONS){
                     WORD by;
