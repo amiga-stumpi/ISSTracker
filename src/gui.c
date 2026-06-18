@@ -25,13 +25,13 @@
 #define ITEM_UPDATE_INTERVAL 0
 #define ITEM_LANGUAGE 1
 #define ITEM_INFO 0
-static struct IntuiText mi_quit_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Quit", 0 };
+static struct IntuiText mi_quit_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Quit", 0 };
 static struct MenuItem mi_quit = { 0, 0,0, 60,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_quit_text, 0, 0, 0, 0 };
-static struct IntuiText mi_update_interval_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
-static struct IntuiText mi_language_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Sprache...", 0 };
+static struct IntuiText mi_update_interval_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
+static struct IntuiText mi_language_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Sprache...", 0 };
 static struct MenuItem mi_language = { 0, 0,10, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_language_text, 0, 0, 0, 0 };
 static struct MenuItem mi_update_interval = { &mi_language, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
-static struct IntuiText mi_info_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Info", 0 };
+static struct IntuiText mi_info_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Info", 0 };
 static struct MenuItem mi_info = { 0, 0,0, 60,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_info_text, 0, 0, 0, 0 };
 static struct Menu menu_help = { 0, 204,0, 16,10, MENUENABLED, (UBYTE *)"?", &mi_info, 0,0,0,0 };
 static struct Menu menu_settings = { &menu_help, 72,0, 132,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
