@@ -14,6 +14,7 @@
 #define MIN_MAP_H 100
 #define MARK_R 7
 static void text_at(struct RastPort *rp, WORD x, WORD y, const char *s){ Move(rp,x,y); Text(rp,(STRPTR)s,strlen(s)); }
+static void text_at_n(struct RastPort *rp, WORD x, WORD y, const char *s, UWORD n){ Move(rp,x,y); Text(rp,(STRPTR)s,n); }
 static const char *status_name(IssTrackerApp *app){ if(app->language==ISS_LANG_DE){ if(app->status==ISS_STATUS_ONLINE) return "Online"; if(app->status==ISS_STATUS_LOADING) return "Laden"; if(app->status==ISS_STATUS_ERROR) return "Fehler"; return "Offline"; } if(app->language==ISS_LANG_PL){ if(app->status==ISS_STATUS_ONLINE) return "Online"; if(app->status==ISS_STATUS_LOADING) return "Ladowanie"; if(app->status==ISS_STATUS_ERROR) return "Blad"; return "Offline"; } if(app->status==ISS_STATUS_ONLINE) return "Online"; if(app->status==ISS_STATUS_LOADING) return "Loading"; if(app->status==ISS_STATUS_ERROR) return "Error"; return "Offline"; }
 static const char *light_name(IssTrackerApp *app){ if(app->language==ISS_LANG_DE){ if(app->light_state==ISS_LIGHT_DAY) return "Tag"; if(app->light_state==ISS_LIGHT_TWILIGHT) return "Daemmerung"; return "Nacht"; } if(app->language==ISS_LANG_PL){ if(app->light_state==ISS_LIGHT_DAY) return "Dzien"; if(app->light_state==ISS_LIGHT_TWILIGHT) return "Zmierzch"; return "Noc"; } if(app->light_state==ISS_LIGHT_DAY) return "DAY"; if(app->light_state==ISS_LIGHT_TWILIGHT) return "TWILIGHT"; return "NIGHT"; }
 static const char *surf_name(IssTrackerApp *app){ if(app->language==ISS_LANG_DE){ if(app->surface_state==ISS_SURFACE_LAND) return "Land"; if(app->surface_state==ISS_SURFACE_COAST) return "Kueste"; return "Wasser"; } if(app->language==ISS_LANG_PL){ if(app->surface_state==ISS_SURFACE_LAND) return "Lad"; if(app->surface_state==ISS_SURFACE_COAST) return "Wybrzeze"; return "Woda"; } if(app->surface_state==ISS_SURFACE_LAND) return "LAND"; if(app->surface_state==ISS_SURFACE_COAST) return "COAST"; return "WATER"; }
@@ -59,11 +60,39 @@ static void make_detail_line(IssTrackerApp *app, char *buf)
     if(app->language==ISS_LANG_EN){ if(europe==2) append_str(buf,&p,"Notice: ISS is over Europe  *  "); else if(europe==1) append_str(buf,&p,"Notice: ISS is approaching Europe  *  "); append_str(buf,&p,"Updated "); } else if(app->language==ISS_LANG_PL){ if(europe==2) append_str(buf,&p,"Info: ISS jest nad Europa  *  "); else if(europe==1) append_str(buf,&p,"Info: ISS zbliza sie do Europy  *  "); append_str(buf,&p,"Aktualizacja "); } else { if(europe==2) append_str(buf,&p,"Hinweis: ISS ist ueber Europa  *  "); else if(europe==1) append_str(buf,&p,"Hinweis: ISS naehert sich Europa  *  "); append_str(buf,&p,"Aktualisiert "); }
     append_utc_time(buf,&p,app->current.timestamp);
 }
+static UWORD split_text_to_width(struct RastPort *rp, const char *s, WORD max_width)
+{
+    UWORD i;
+    UWORD last_space;
+    UWORD len;
+    len=(UWORD)strlen(s);
+    last_space=0;
+    for(i=1;i<=len;i++){
+        if(s[i-1]==' ') last_space=i-1;
+        if(TextLength(rp,(STRPTR)s,i)>max_width){
+            if(last_space>0) return last_space;
+            return (i>1) ? (UWORD)(i-1) : 1;
+        }
+    }
+    return len;
+}
+static void draw_funfact_lines(struct RastPort *rp, WORD x, WORD y, WORD max_width, const char *s)
+{
+    UWORD split;
+    while(*s==' ') s++;
+    split=split_text_to_width(rp,s,max_width);
+    text_at_n(rp,x,y,s,split);
+    if(s[split]){
+        s+=split;
+        while(*s==' ') s++;
+        text_at(rp,x,(WORD)(y+STATUS_GAP),s);
+    }
+}
 static void draw_map_rect(struct RastPort *rp, UBYTE depth, WORD map_x, WORD map_y, WORD map_w, WORD map_h, WORD rx1, WORD ry1, WORD rx2, WORD ry2){ WORD y; WORD x; WORD sx; WORD sy; WORD run_start; UBYTE pen; UBYTE last; if(rx1<0) rx1=0; if(ry1<0) ry1=0; if(rx2>=map_w) rx2=(WORD)(map_w-1); if(ry2>=map_h) ry2=(WORD)(map_h-1); for(y=ry1;y<=ry2;y++){ sy=(WORD)(((LONG)y*ISS_MAP_SRC_H)/map_h); run_start=rx1; sx=(WORD)(((LONG)rx1*ISS_MAP_SRC_W)/map_w); last=iss_map_get_pen(depth,sx,sy); for(x=(WORD)(rx1+1);x<=rx2;x++){ sx=(WORD)(((LONG)x*ISS_MAP_SRC_W)/map_w); pen=iss_map_get_pen(depth,sx,sy); if(pen!=last){ SetAPen(rp,last); Move(rp,map_x+run_start,map_y+y); Draw(rp,map_x+x-1,map_y+y); run_start=x; last=pen; } } SetAPen(rp,last); Move(rp,map_x+run_start,map_y+y); Draw(rp,map_x+rx2,map_y+y); } }
 static void draw_map(struct RastPort *rp, UBYTE depth, WORD map_x, WORD map_y, WORD map_w, WORD map_h){ draw_map_rect(rp,depth,map_x,map_y,map_w,map_h,0,0,(WORD)(map_w-1),(WORD)(map_h-1)); SetAPen(rp,1); Move(rp,map_x,map_y); Draw(rp,map_x+map_w,map_y); Draw(rp,map_x+map_w,map_y+map_h); Draw(rp,map_x,map_y+map_h); Draw(rp,map_x,map_y); }
 static void draw_marker_shape(struct RastPort *rp, WORD px, WORD py){ SetAPen(rp,1); Move(rp,px-5,py); Draw(rp,px+5,py); Move(rp,px,py-5); Draw(rp,px,py+5); SetAPen(rp,3); RectFill(rp,px-2,py-2,px+2,py+2); }
 static void draw_trail_clip(struct RastPort *rp, IssTrackerApp *app, UBYTE depth, WORD map_x, WORD map_y, WORD map_w, WORD map_h, WORD rx1, WORD ry1, WORD rx2, WORD ry2){ WORD px; WORD py; WORD lx; WORD ly; UWORD i; UWORD idx; if(depth<4 && !app->show_trail) return; SetAPen(rp,(depth>=4)?0:2); for(i=0;i<app->trail_count;i++){ idx=(app->trail_head+ISS_TRAIL_MAX-app->trail_count+i)%ISS_TRAIL_MAX; if(app->trail[idx].valid){ iss_project_equirect(app->trail[idx].lat_cd,app->trail[idx].lon_cd,map_x,map_y,map_w,map_h,&px,&py); lx=(WORD)(px-map_x); ly=(WORD)(py-map_y); if(lx>=rx1-1 && lx<=rx2+1 && ly>=ry1-1 && ly<=ry2+1) RectFill(rp,px-1,py-1,px+1,py+1); } } }
 static void draw_iss(struct RastPort *rp,IssTrackerApp *app, UBYTE depth, WORD map_x, WORD map_y, WORD map_w, WORD map_h){ WORD px; WORD py; draw_trail_clip(rp,app,depth,map_x,map_y,map_w,map_h,0,0,(WORD)(map_w-1),(WORD)(map_h-1)); if(app->current.valid && app->blink){ iss_project_equirect(app->current.lat_cd,app->current.lon_cd,map_x,map_y,map_w,map_h,&px,&py); draw_marker_shape(rp,px,py); } }
 void draw_iss_blink(struct Window *win, IssTrackerApp *app){ struct RastPort *rp; UBYTE depth; WORD mx; WORD my; WORD mw; WORD mh; WORD by; WORD sy; WORD iy; WORD px; WORD py; WORD lx; WORD ly; WORD rx1; WORD ry1; WORD rx2; WORD ry2; if(!app->current.valid) return; rp=win->RPort; depth=(UBYTE)win->WScreen->BitMap.Depth; layout(win,&mx,&my,&mw,&mh,&by,&sy,&iy); iss_project_equirect(app->current.lat_cd,app->current.lon_cd,mx,my,mw,mh,&px,&py); lx=(WORD)(px-mx); ly=(WORD)(py-my); rx1=(WORD)(lx-MARK_R); ry1=(WORD)(ly-MARK_R); rx2=(WORD)(lx+MARK_R); ry2=(WORD)(ly+MARK_R); SetDrMd(rp,JAM1); draw_map_rect(rp,depth,mx,my,mw,mh,rx1,ry1,rx2,ry2); draw_trail_clip(rp,app,depth,mx,my,mw,mh,rx1,ry1,rx2,ry2); if(app->blink) draw_marker_shape(rp,px,py); }
-void draw_panel(struct Window *win, IssTrackerApp *app){ struct RastPort *rp; WORD mx; WORD my; WORD mw; WORD mh; WORD by; WORD sy; WORD iy; WORD right; WORD bottom; char line[120]; rp=win->RPort; layout(win,&mx,&my,&mw,&mh,&by,&sy,&iy); right=(WORD)(win->Width-win->BorderRight-1); bottom=(WORD)(win->Height-win->BorderBottom-1); SetDrMd(rp,JAM1); SetAPen(rp,0); RectFill(rp,win->BorderLeft,by-2,right,bottom); draw_button(rp,mx,by,"Update",0); draw_button(rp,(WORD)(mx+64),by,"Info",0); SetAPen(rp,1); make_status_line(app,line); text_at(rp,mx,sy,line); make_detail_line(app,line); text_at(rp,mx,iy,line); }
+void draw_panel(struct Window *win, IssTrackerApp *app){ struct RastPort *rp; WORD mx; WORD my; WORD mw; WORD mh; WORD by; WORD sy; WORD iy; WORD right; WORD bottom; char line[120]; rp=win->RPort; layout(win,&mx,&my,&mw,&mh,&by,&sy,&iy); right=(WORD)(win->Width-win->BorderRight-1); bottom=(WORD)(win->Height-win->BorderBottom-1); SetDrMd(rp,JAM1); SetAPen(rp,0); RectFill(rp,win->BorderLeft,by-2,right,bottom); draw_button(rp,mx,by,"Update",0); draw_button(rp,(WORD)(mx+64),by,"Info",0); SetAPen(rp,1); make_status_line(app,line); text_at(rp,mx,sy,line); make_detail_line(app,line); if(app->funfact_active) draw_funfact_lines(rp,mx,iy,(WORD)(right-mx-4),line); else text_at(rp,mx,iy,line); }
 void draw_all(struct Window *win, IssTrackerApp *app){ struct RastPort *rp; UBYTE depth; WORD mx; WORD my; WORD mw; WORD mh; WORD by; WORD sy; WORD iy; WORD right; WORD bottom; rp=win->RPort; depth=(UBYTE)win->WScreen->BitMap.Depth; layout(win,&mx,&my,&mw,&mh,&by,&sy,&iy); right=(WORD)(win->Width-win->BorderRight-1); bottom=(WORD)(win->Height-win->BorderBottom-1); SetDrMd(rp,JAM1); SetAPen(rp,0); RectFill(rp,win->BorderLeft,win->BorderTop,right,bottom); draw_map(rp,depth,mx,my,mw,mh); draw_iss(rp,app,depth,mx,my,mw,mh); draw_panel(win,app); }
