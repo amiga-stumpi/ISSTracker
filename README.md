@@ -1,6 +1,6 @@
-# ISS Tracker
+# ISSTracker live
 
-ISS Tracker is an AmigaOS 1.3 Workbench application that displays the current ISS ground position on an equirectangular world map.
+ISSTracker live is an AmigaOS 1.3 Workbench application that displays the current ISS ground position on an equirectangular world map.
 
 Features:
 - Plain HTTP/1.0 fetch from `api.open-notify.org/iss-now.json` through a bsdsocket-compatible library.

@@ -1,8 +1,8 @@
 #ifndef ISS_APP_H
 #define ISS_APP_H
 #include <exec/types.h>
-#define ISS_VERSION "ISS Tracker v1.0"
-#define ISS_TITLE "ISS Tracker v1.0"
+#define ISS_VERSION "ISSTracker live v1.0"
+#define ISS_TITLE "ISSTracker live v1.0"
 #define ISS_TRAIL_MAX 16
 #define ISS_STATUS_OFFLINE 0
 #define ISS_STATUS_LOADING 1
