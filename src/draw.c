@@ -47,7 +47,7 @@ static void make_detail_line(IssTrackerApp *app, char *buf)
     UBYTE europe;
     p=0;
     if(app->status_page==0){ append_str(buf,&p,app->info_text); return; }
-    if(app->funfact_active){ append_str(buf,&p,funfact_get(app->funfact_index)); return; }
+    if(app->funfact_active){ append_str(buf,&p,funfact_get(app->funfact_index,app->language)); return; }
     if(!app->current.valid){ append_str(buf,&p,app->info_text); return; }
     if(app->status_page==1){ if(app->language==ISS_LANG_PL) append_str(buf,&p,"Pozycja: Lat "); else append_str(buf,&p,"Position: Lat "); append_num(buf,&p,app->current.lat_cd/100); append_str(buf,&p,"  Lon "); append_num(buf,&p,app->current.lon_cd/100); return; }
     if(app->status_page==2){ if(app->language==ISS_LANG_EN) append_str(buf,&p,"ISS: Altitude 420 km  *  Speed 27600 km/h  *  Orbit "); else if(app->language==ISS_LANG_PL) append_str(buf,&p,"ISS: Wysokosc 420 km  *  Predkosc 27600 km/h  *  Orbita "); else append_str(buf,&p,"ISS: Hoehe 420 km  *  Tempo 27600 km/h  *  Orbit "); append_num(buf,&p,(LONG)orbit_number(app->current.timestamp)); return; }
