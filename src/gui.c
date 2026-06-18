@@ -51,6 +51,8 @@ static const char *txt_interval_fail(IssTrackerApp *app){ if(app->language==ISS_
 static const char *txt_language_title(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache"; if(app->language==ISS_LANG_PL) return "Jezyk"; return "Language"; }
 static const char *txt_language_changed(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache geaendert"; if(app->language==ISS_LANG_PL) return "Jezyk zmieniony"; return "Language changed"; }
 static const char *txt_prepare_network(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Bereite Netzwerk vor..."; if(app->language==ISS_LANG_PL) return "Przygotowuje siec..."; return "Preparing network..."; }
+static const char *txt_over_europe(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Hinweis: ISS ist ueber Europa"; if(app->language==ISS_LANG_PL) return "Info: ISS jest nad Europa"; return "Notice: ISS is over Europe"; }
+static UBYTE iss_over_europe(const IssPosition *p){ return (p->valid && p->lat_cd>=3500 && p->lat_cd<=7200 && p->lon_cd>=-2500 && p->lon_cd<=4500) ? 1 : 0; }
 static void apply_menu_texts(IssTrackerApp *app){ menu_project.MenuName=(UBYTE *)txt_project(app); mi_quit_text.IText=(STRPTR)txt_quit(app); menu_settings.MenuName=(UBYTE *)txt_settings(app); mi_update_interval_text.IText=(STRPTR)txt_interval(app); mi_language_text.IText=(STRPTR)txt_language(app); }
 static UWORD next_funfact_delay(IssTrackerApp *app){ app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)(FUNFACT_MIN_TICKS+(UWORD)((app->funfact_seed>>16)%FUNFACT_RANGE_TICKS)); }
 static UWORD next_funfact_index(IssTrackerApp *app){ UWORD count; count=funfact_count(); if(count==0) return 0; app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)((app->funfact_seed>>16)%count); }
@@ -84,8 +86,15 @@ static void update_now(struct Window *win, IssTrackerApp *app)
         app->surface_state=worldmask_classify(p.lat_cd,p.lon_cd);
         app->blink=1;
         set_status(app,ISS_STATUS_ONLINE,"ONLINE");
-        if(app->language==ISS_LANG_DE) strcpy(app->info_text,"ISS Position aktualisiert"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Pozycja ISS zaktualizowana"); else strcpy(app->info_text,"ISS position updated");
-        if(!app->funfact_active) app->status_page=0;
+        if(iss_over_europe(&p) && !app->europe_alert_seen){
+            app->europe_alert_seen=1;
+            strcpy(app->info_text,txt_over_europe(app));
+            app->status_page=0;
+            DisplayBeep(win->WScreen);
+        } else {
+            if(app->language==ISS_LANG_DE) strcpy(app->info_text,"ISS Position aktualisiert"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Pozycja ISS zaktualizowana"); else strcpy(app->info_text,"ISS position updated");
+            if(!app->funfact_active) app->status_page=0;
+        }
         draw_iss_blink(win,app);
         draw_panel(win,app);
     } else {
