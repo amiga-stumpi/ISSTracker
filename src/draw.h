@@ -3,4 +3,5 @@
 #include <intuition/intuition.h>
 #include "app.h"
 void draw_all(struct Window *win, IssTrackerApp *app);
+void draw_panel(struct Window *win, IssTrackerApp *app);
 #endif
