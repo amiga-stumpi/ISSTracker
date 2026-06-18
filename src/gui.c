@@ -15,10 +15,15 @@
 #define BTN_H 16
 #define AUTO_TICKS_PER_MIN 600UL
 #define MENU_SETTINGS 0
+#define MENU_HELP 1
 #define ITEM_UPDATE_INTERVAL 0
+#define ITEM_INFO 0
 static struct IntuiText mi_update_interval_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
 static struct MenuItem mi_update_interval = { 0, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
-static struct Menu menu_settings = { 0, 0,0, 70,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
+static struct IntuiText mi_info_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Info", 0 };
+static struct MenuItem mi_info = { 0, 0,0, 60,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_info_text, 0, 0, 0, 0 };
+static struct Menu menu_help = { 0, 78,0, 16,10, MENUENABLED, (UBYTE *)"?", &mi_info, 0,0,0,0 };
+static struct Menu menu_settings = { &menu_help, 0,0, 70,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
 static void button_layout(struct Window *win, WORD *by){ WORD mh; mh=(WORD)(win->Height-88); if(mh<80) mh=80; *by=(WORD)(18+mh+8); }
 static int in_rect(WORD mx, WORD my, WORD x, WORD y, WORD w, WORD h){ return mx>=x && mx<=x+w && my>=y && my<=y+h; }
 static void text_at(struct RastPort *rp, WORD x, WORD y, const char *s){ Move(rp,x,y); Text(rp,(STRPTR)s,strlen(s)); }
@@ -74,6 +79,44 @@ static void info_now(struct Window *win, IssTrackerApp *app)
     append_num(app->info_text,&p,km);
     if(p+3<sizeof(app->info_text)){ app->info_text[p++]='k'; app->info_text[p++]='m'; app->info_text[p]=0; }
     draw_panel(win,app);
+}
+
+static void draw_info_window(struct Window *w)
+{
+    struct RastPort *rp;
+    rp=w->RPort;
+    SetDrMd(rp,JAM1);
+    SetAPen(rp,0);
+    RectFill(rp,0,0,w->Width-1,w->Height-1);
+    SetAPen(rp,1);
+    text_at(rp,12,18,"ISS Tracker for Kick1.3");
+    text_at(rp,12,32,"Version: v1.0");
+    text_at(rp,12,46,"by Marcel Jaehne");
+    text_at(rp,12,60,"(c) 2026");
+    draw_small_button(rp,88,78,50,16,"OK");
+}
+static void open_info_window(IssTrackerApp *app, struct Window *parent)
+{
+    struct NewWindow nw;
+    struct Window *w;
+    WORD done;
+    memset(&nw,0,sizeof(nw));
+    nw.LeftEdge=(WORD)(parent->LeftEdge+24);
+    nw.TopEdge=(WORD)(parent->TopEdge+24);
+    nw.Width=230;
+    nw.Height=110;
+    nw.DetailPen=0;
+    nw.BlockPen=1;
+    nw.IDCMPFlags=IDCMP_CLOSEWINDOW|IDCMP_MOUSEBUTTONS|IDCMP_REFRESHWINDOW;
+    nw.Flags=WFLG_CLOSEGADGET|WFLG_DRAGBAR|WFLG_DEPTHGADGET|WFLG_ACTIVATE|WFLG_SMART_REFRESH;
+    nw.Type=WBENCHSCREEN;
+    nw.Title=(UBYTE *)"Info";
+    w=OpenWindow(&nw);
+    if(!w){ strcpy(app->info_text,"Info window failed"); draw_panel(parent,app); return; }
+    draw_info_window(w);
+    done=0;
+    while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_info_window(w); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,88,78,50,16)) done=1; } } } }
+    CloseWindow(w);
 }
 static void open_interval_window(IssTrackerApp *app, struct Window *parent)
 {
@@ -146,7 +189,7 @@ LONG gui_run(IssTrackerApp *app)
                 ReplyMsg((struct Message*)msg);
                 if(cls==IDCMP_CLOSEWINDOW) done=1;
                 else if(cls==IDCMP_REFRESHWINDOW || cls==IDCMP_NEWSIZE) draw_all(win,app);
-                else if(cls==IDCMP_MENUPICK){ if(MENUNUM(code)==MENU_SETTINGS && ITEMNUM(code)==ITEM_UPDATE_INTERVAL) open_interval_window(app,win); }
+                else if(cls==IDCMP_MENUPICK){ if(MENUNUM(code)==MENU_SETTINGS && ITEMNUM(code)==ITEM_UPDATE_INTERVAL) open_interval_window(app,win); else if(MENUNUM(code)==MENU_HELP && ITEMNUM(code)==ITEM_INFO) open_info_window(app,win); }
                 else if(cls==IDCMP_INTUITICKS){
                     auto_ticks++;
                     blink_ticks++;
