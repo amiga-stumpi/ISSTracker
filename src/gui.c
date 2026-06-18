@@ -71,11 +71,13 @@ static void update_now(struct Window *win, IssTrackerApp *app)
         app->blink=1;
         set_status(app,ISS_STATUS_ONLINE,"ONLINE");
         if(app->language==ISS_LANG_DE) strcpy(app->info_text,"ISS Position aktualisiert"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Pozycja ISS zaktualizowana"); else strcpy(app->info_text,"ISS position updated");
+        app->status_page=0;
         draw_iss_blink(win,app);
         draw_panel(win,app);
     } else {
         set_status(app,ISS_STATUS_ERROR,"ERROR");
         if(err[0]) strcpy(app->info_text,err); else { if(app->language==ISS_LANG_DE) strcpy(app->info_text,"Update fehlgeschlagen"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Aktualizacja blad"); else strcpy(app->info_text,"Update failed"); }
+        app->status_page=0;
         draw_panel(win,app);
     }
 }
@@ -85,7 +87,7 @@ static void info_now(struct Window *win, IssTrackerApp *app)
     UWORD km;
     UWORD p;
     const char *s;
-    if(!app->current.valid){ if(app->language==ISS_LANG_DE) strcpy(app->info_text,"Noch keine ISS Position"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Brak pozycji ISS"); else strcpy(app->info_text,"No ISS position yet"); draw_panel(win,app); return; }
+    if(!app->current.valid){ if(app->language==ISS_LANG_DE) strcpy(app->info_text,"Noch keine ISS Position"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Brak pozycji ISS"); else strcpy(app->info_text,"No ISS position yet"); app->status_page=0; draw_panel(win,app); return; }
     c=citydb_nearest(app->current.lat_cd,app->current.lon_cd,&km);
     if(app->language==ISS_LANG_DE) strcpy(app->info_text,"Naechste Stadt: "); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Najblizsze miasto: "); else strcpy(app->info_text,"Nearest: ");
     p=strlen(app->info_text);
@@ -95,6 +97,7 @@ static void info_now(struct Window *win, IssTrackerApp *app)
     app->info_text[p++]=' ';
     append_num(app->info_text,&p,km);
     if(p+3<sizeof(app->info_text)){ app->info_text[p++]='k'; app->info_text[p++]='m'; app->info_text[p]=0; }
+    app->status_page=0;
     draw_panel(win,app);
 }
 
@@ -278,7 +281,7 @@ LONG gui_run(IssTrackerApp *app)
                     blink_ticks++;
                     status_ticks++;
                     if(blink_ticks>=5){ blink_ticks=0; app->blink=(UBYTE)!app->blink; if(app->current.valid) draw_iss_blink(win,app); }
-                    if(status_ticks>=30){ status_ticks=0; app->status_page=(UBYTE)((app->status_page+1)%4); draw_panel(win,app); }
+                    if(status_ticks>=30){ status_ticks=0; if(app->current.valid){ if(app->status_page<1 || app->status_page>=3) app->status_page=1; else app->status_page=(UBYTE)(app->status_page+1); } else app->status_page=0; draw_panel(win,app); }
                     if(auto_ticks>=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)){ auto_ticks=0; update_now(win,app); }
                 } else if(cls==IDCMP_MOUSEBUTTONS){
                     WORD by;
