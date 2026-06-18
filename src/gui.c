@@ -56,7 +56,6 @@ static UBYTE iss_over_europe(const IssPosition *p){ return (p->valid && p->lat_c
 static void apply_menu_texts(IssTrackerApp *app){ menu_project.MenuName=(UBYTE *)txt_project(app); mi_quit_text.IText=(STRPTR)txt_quit(app); menu_settings.MenuName=(UBYTE *)txt_settings(app); mi_update_interval_text.IText=(STRPTR)txt_interval(app); mi_language_text.IText=(STRPTR)txt_language(app); }
 static UWORD next_funfact_delay(IssTrackerApp *app){ app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)(FUNFACT_MIN_TICKS+(UWORD)((app->funfact_seed>>16)%FUNFACT_RANGE_TICKS)); }
 static UWORD next_funfact_index(IssTrackerApp *app){ UWORD count; count=funfact_count(); if(count==0) return 0; app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)((app->funfact_seed>>16)%count); }
-static void button_layout(struct Window *win, WORD *bx, WORD *by){ WORD w; WORD h; WORD mw; WORD mh; w=(WORD)(win->Width-win->BorderLeft-win->BorderRight); h=(WORD)(win->Height-win->BorderTop-win->BorderBottom); mw=(WORD)(w-22); if(mw<300) mw=300; mh=(WORD)((LONG)mw*200L/600L); if(mh>(WORD)(h-104)) mh=(WORD)(h-104); if(mh<100) mh=100; *bx=(WORD)(win->BorderLeft+8); *by=(WORD)(win->BorderTop+18+mh+8); }
 static int in_rect(WORD mx, WORD my, WORD x, WORD y, WORD w, WORD h){ return mx>=x && mx<=x+w && my>=y && my<=y+h; }
 static void text_at(struct RastPort *rp, WORD x, WORD y, const char *s){ Move(rp,x,y); Text(rp,(STRPTR)s,strlen(s)); }
 static void set_status(IssTrackerApp *app, UBYTE st, const char *txt){ UWORD i; app->status=st; for(i=0;txt[i]&&i+1<sizeof(app->status_text);i++) app->status_text[i]=txt[i]; app->status_text[i]=0; }
@@ -316,7 +315,7 @@ LONG gui_run(IssTrackerApp *app)
                 } else if(cls==IDCMP_MOUSEBUTTONS){
                     WORD bx;
                     WORD by;
-                    button_layout(win,&bx,&by);
+                    draw_button_layout(win,&bx,&by);
                     if(in_rect(mx,my,bx,by,BTN_W,BTN_H)){ auto_ticks=0; update_now(win,app); }
                     else if(in_rect(mx,my,(WORD)(bx+64),by,BTN_W,BTN_H)) info_now(win,app);
                 }
