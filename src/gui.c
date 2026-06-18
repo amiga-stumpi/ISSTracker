@@ -17,13 +17,29 @@
 #define MENU_SETTINGS 0
 #define MENU_HELP 1
 #define ITEM_UPDATE_INTERVAL 0
+#define ITEM_LANGUAGE 1
 #define ITEM_INFO 0
 static struct IntuiText mi_update_interval_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
-static struct MenuItem mi_update_interval = { 0, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
+static struct IntuiText mi_language_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Sprache...", 0 };
+static struct MenuItem mi_language = { 0, 0,10, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_language_text, 0, 0, 0, 0 };
+static struct MenuItem mi_update_interval = { &mi_language, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
 static struct IntuiText mi_info_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Info", 0 };
 static struct MenuItem mi_info = { 0, 0,0, 60,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_info_text, 0, 0, 0, 0 };
-static struct Menu menu_help = { 0, 78,0, 16,10, MENUENABLED, (UBYTE *)"?", &mi_info, 0,0,0,0 };
-static struct Menu menu_settings = { &menu_help, 0,0, 70,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
+static struct Menu menu_help = { 0, 112,0, 16,10, MENUENABLED, (UBYTE *)"?", &mi_info, 0,0,0,0 };
+static struct Menu menu_settings = { &menu_help, 0,0, 104,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
+static const char *txt_settings(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Einstellungen"; if(app->language==ISS_LANG_PL) return "Ustawienia"; return "Settings"; }
+static const char *txt_interval(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Update Intervall..."; if(app->language==ISS_LANG_PL) return "Interwal..."; return "Update Interval..."; }
+static const char *txt_language(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache..."; if(app->language==ISS_LANG_PL) return "Jezyk..."; return "Language..."; }
+static const char *txt_minutes(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Minuten:"; if(app->language==ISS_LANG_PL) return "Minuty:"; return "Minutes:"; }
+static const char *txt_interval_title(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Update Intervall"; if(app->language==ISS_LANG_PL) return "Interwal"; return "Update Interval"; }
+static const char *txt_interval_head(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Update Intervall Minuten"; if(app->language==ISS_LANG_PL) return "Interwal w minutach"; return "Update interval minutes"; }
+static const char *txt_cancel(IssTrackerApp *app){ if(app->language==ISS_LANG_PL) return "Anuluj"; return "Cancel"; }
+static const char *txt_info_fail(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Info Fenster fehlgeschlagen"; if(app->language==ISS_LANG_PL) return "Okno info blad"; return "Info window failed"; }
+static const char *txt_interval_changed(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Update Intervall geaendert"; if(app->language==ISS_LANG_PL) return "Interwal zmieniony"; return "Update interval changed"; }
+static const char *txt_interval_fail(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Intervall Fenster fehlgeschlagen"; if(app->language==ISS_LANG_PL) return "Okno interwalu blad"; return "Interval window failed"; }
+static const char *txt_language_title(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache"; if(app->language==ISS_LANG_PL) return "Jezyk"; return "Language"; }
+static const char *txt_language_changed(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache geaendert"; if(app->language==ISS_LANG_PL) return "Jezyk zmieniony"; return "Language changed"; }
+static void apply_menu_texts(IssTrackerApp *app){ menu_settings.MenuName=(UBYTE *)txt_settings(app); mi_update_interval_text.IText=(STRPTR)txt_interval(app); mi_language_text.IText=(STRPTR)txt_language(app); }
 static void button_layout(struct Window *win, WORD *by){ WORD mh; mh=(WORD)(win->Height-88); if(mh<80) mh=80; *by=(WORD)(18+mh+8); }
 static int in_rect(WORD mx, WORD my, WORD x, WORD y, WORD w, WORD h){ return mx>=x && mx<=x+w && my>=y && my<=y+h; }
 static void text_at(struct RastPort *rp, WORD x, WORD y, const char *s){ Move(rp,x,y); Text(rp,(STRPTR)s,strlen(s)); }
@@ -31,7 +47,7 @@ static void set_status(IssTrackerApp *app, UBYTE st, const char *txt){ UWORD i; 
 static void append_num(char *b, UWORD *p, LONG n){ char t[12]; WORD i; WORD j; if(n<0){ b[(*p)++]='-'; n=-n; } i=0; do{ t[i++]=(char)('0'+(n%10)); n/=10; }while(n&&i<11); for(j=i-1;j>=0;j--) b[(*p)++]=t[j]; b[*p]=0; }
 static UWORD parse_minutes(const char *s){ ULONG v; v=0; while(*s==' ') s++; while(*s>='0' && *s<='9'){ v=(v*10)+(*s-'0'); if(v>120) return 120; s++; } if(v<1) v=1; if(v>120) v=120; return (UWORD)v; }
 static void draw_small_button(struct RastPort *rp, WORD x, WORD y, WORD w, WORD h, const char *label){ SetAPen(rp,1); RectFill(rp,x,y,x+w,y+h); SetAPen(rp,0); Move(rp,x+6,y+11); Text(rp,(STRPTR)label,strlen(label)); SetAPen(rp,3); Move(rp,x,y); Draw(rp,x+w,y); Draw(rp,x+w,y+h); Draw(rp,x,y+h); Draw(rp,x,y); }
-static void draw_interval_window(struct Window *w, struct Gadget *g){ struct RastPort *rp; rp=w->RPort; SetDrMd(rp,JAM1); SetAPen(rp,0); RectFill(rp,0,0,w->Width-1,w->Height-1); SetAPen(rp,1); text_at(rp,10,18,"Update interval minutes"); text_at(rp,10,40,"Minutes:"); SetAPen(rp,1); Move(rp,82,26); Draw(rp,132,26); Draw(rp,132,45); Draw(rp,82,45); Draw(rp,82,26); RefreshGList(g,w,0,1); draw_small_button(rp,48,58,42,16,"OK"); draw_small_button(rp,102,58,54,16,"Cancel"); }
+static void draw_interval_window(struct Window *w, IssTrackerApp *app, struct Gadget *g){ struct RastPort *rp; rp=w->RPort; SetDrMd(rp,JAM1); SetAPen(rp,0); RectFill(rp,0,0,w->Width-1,w->Height-1); SetAPen(rp,1); text_at(rp,10,18,txt_interval_head(app)); text_at(rp,10,40,txt_minutes(app)); SetAPen(rp,1); Move(rp,82,26); Draw(rp,132,26); Draw(rp,132,45); Draw(rp,82,45); Draw(rp,82,26); RefreshGList(g,w,0,1); draw_small_button(rp,48,58,42,16,"OK"); draw_small_button(rp,102,58,54,16,txt_cancel(app)); }
 static void update_now(struct Window *win, IssTrackerApp *app)
 {
     IssPosition p;
@@ -39,7 +55,7 @@ static void update_now(struct Window *win, IssTrackerApp *app)
     UBYTE old_blink;
     err[0]=0;
     set_status(app,ISS_STATUS_LOADING,"LOADING");
-    strcpy(app->info_text,"Fetching ISS position...");
+    if(app->language==ISS_LANG_DE) strcpy(app->info_text,"ISS Position wird geladen..."); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Pobieranie pozycji ISS..."); else strcpy(app->info_text,"Fetching ISS position...");
     draw_panel(win,app);
     if(iss_fetch_now(&p,err,sizeof(err))==0){
         if(app->current.valid){
@@ -54,12 +70,12 @@ static void update_now(struct Window *win, IssTrackerApp *app)
         app->surface_state=worldmask_classify(p.lat_cd,p.lon_cd);
         app->blink=1;
         set_status(app,ISS_STATUS_ONLINE,"ONLINE");
-        strcpy(app->info_text,"ISS position updated");
+        if(app->language==ISS_LANG_DE) strcpy(app->info_text,"ISS Position aktualisiert"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Pozycja ISS zaktualizowana"); else strcpy(app->info_text,"ISS position updated");
         draw_iss_blink(win,app);
         draw_panel(win,app);
     } else {
         set_status(app,ISS_STATUS_ERROR,"ERROR");
-        if(err[0]) strcpy(app->info_text,err); else strcpy(app->info_text,"Update failed");
+        if(err[0]) strcpy(app->info_text,err); else { if(app->language==ISS_LANG_DE) strcpy(app->info_text,"Update fehlgeschlagen"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Aktualizacja blad"); else strcpy(app->info_text,"Update failed"); }
         draw_panel(win,app);
     }
 }
@@ -69,9 +85,9 @@ static void info_now(struct Window *win, IssTrackerApp *app)
     UWORD km;
     UWORD p;
     const char *s;
-    if(!app->current.valid){ strcpy(app->info_text,"No ISS position yet"); draw_panel(win,app); return; }
+    if(!app->current.valid){ if(app->language==ISS_LANG_DE) strcpy(app->info_text,"Noch keine ISS Position"); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Brak pozycji ISS"); else strcpy(app->info_text,"No ISS position yet"); draw_panel(win,app); return; }
     c=citydb_nearest(app->current.lat_cd,app->current.lon_cd,&km);
-    strcpy(app->info_text,"Nearest: ");
+    if(app->language==ISS_LANG_DE) strcpy(app->info_text,"Naechste Stadt: "); else if(app->language==ISS_LANG_PL) strcpy(app->info_text,"Najblizsze miasto: "); else strcpy(app->info_text,"Nearest: ");
     p=strlen(app->info_text);
     s=c->name; while(*s && p+1<sizeof(app->info_text)) app->info_text[p++]=*s++;
     app->info_text[p++]=' ';
@@ -113,11 +129,52 @@ static void open_info_window(IssTrackerApp *app, struct Window *parent)
     nw.Type=WBENCHSCREEN;
     nw.Title=(UBYTE *)"Info";
     w=OpenWindow(&nw);
-    if(!w){ strcpy(app->info_text,"Info window failed"); draw_panel(parent,app); return; }
+    if(!w){ strcpy(app->info_text,txt_info_fail(app)); draw_panel(parent,app); return; }
     draw_info_window(w);
     done=0;
     while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_info_window(w); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,88,78,50,16)) done=1; } } } }
     CloseWindow(w);
+}
+static void draw_language_window(struct Window *w, IssTrackerApp *app)
+{
+    struct RastPort *rp;
+    rp=w->RPort;
+    SetDrMd(rp,JAM1);
+    SetAPen(rp,0);
+    RectFill(rp,0,0,w->Width-1,w->Height-1);
+    SetAPen(rp,1);
+    text_at(rp,12,18,txt_language_title(app));
+    draw_small_button(rp,18,34,70,16,"Deutsch");
+    draw_small_button(rp,98,34,70,16,"English");
+    draw_small_button(rp,58,58,70,16,"Polski");
+}
+static void open_language_window(IssTrackerApp *app, struct Window *parent)
+{
+    struct NewWindow nw;
+    struct Window *w;
+    WORD done;
+    memset(&nw,0,sizeof(nw));
+    nw.LeftEdge=(WORD)(parent->LeftEdge+24);
+    nw.TopEdge=(WORD)(parent->TopEdge+24);
+    nw.Width=190;
+    nw.Height=92;
+    nw.DetailPen=0;
+    nw.BlockPen=1;
+    nw.IDCMPFlags=IDCMP_CLOSEWINDOW|IDCMP_MOUSEBUTTONS|IDCMP_REFRESHWINDOW;
+    nw.Flags=WFLG_CLOSEGADGET|WFLG_DRAGBAR|WFLG_DEPTHGADGET|WFLG_ACTIVATE|WFLG_SMART_REFRESH;
+    nw.Type=WBENCHSCREEN;
+    nw.Title=(UBYTE *)txt_language_title(app);
+    w=OpenWindow(&nw);
+    if(!w){ strcpy(app->info_text,"Language window failed"); draw_panel(parent,app); return; }
+    draw_language_window(w,app);
+    done=0;
+    while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_language_window(w,app); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,18,34,70,16)){ app->language=ISS_LANG_DE; done=1; } else if(in_rect(mx,my,98,34,70,16)){ app->language=ISS_LANG_EN; done=1; } else if(in_rect(mx,my,58,58,70,16)){ app->language=ISS_LANG_PL; done=1; } } } } }
+    CloseWindow(w);
+    apply_menu_texts(app);
+    ClearMenuStrip(parent);
+    SetMenuStrip(parent,&menu_settings);
+    strcpy(app->info_text,txt_language_changed(app));
+    draw_panel(parent,app);
 }
 static void open_interval_window(IssTrackerApp *app, struct Window *parent)
 {
@@ -158,12 +215,12 @@ static void open_interval_window(IssTrackerApp *app, struct Window *parent)
     nw.Flags=WFLG_CLOSEGADGET|WFLG_DRAGBAR|WFLG_DEPTHGADGET|WFLG_ACTIVATE|WFLG_SMART_REFRESH;
     nw.FirstGadget=&sg;
     nw.Type=WBENCHSCREEN;
-    nw.Title=(UBYTE *)"Update Interval";
+    nw.Title=(UBYTE *)txt_interval_title(app);
     w=OpenWindow(&nw);
-    if(!w){ strcpy(app->info_text,"Interval window failed"); draw_panel(parent,app); return; }
-    draw_interval_window(w,&sg);
+    if(!w){ strcpy(app->info_text,txt_interval_fail(app)); draw_panel(parent,app); return; }
+    draw_interval_window(w,app,&sg);
     done=0;
-    while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_interval_window(w,&sg); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,48,58,42,16)){ app->update_interval_min=parse_minutes(buf); strcpy(app->info_text,"Update interval changed"); draw_panel(parent,app); done=1; } else if(in_rect(mx,my,102,58,54,16)) done=1; } } } }
+    while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_interval_window(w,app,&sg); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,48,58,42,16)){ app->update_interval_min=parse_minutes(buf); strcpy(app->info_text,txt_interval_changed(app)); draw_panel(parent,app); done=1; } else if(in_rect(mx,my,102,58,54,16)) done=1; } } } }
     CloseWindow(w);
 }
 LONG gui_run(IssTrackerApp *app)
@@ -192,6 +249,7 @@ LONG gui_run(IssTrackerApp *app)
     nw.MaxHeight=512;
     win=OpenWindow(&nw);
     if(!win){ nw.LeftEdge=0; nw.TopEdge=0; nw.Width=nw.MinWidth; nw.Height=nw.MinHeight; win=OpenWindow(&nw); if(!win) return -1; }
+    apply_menu_texts(app);
     SetMenuStrip(win,&menu_settings);
     draw_all(win,app);
     done=0;
@@ -214,7 +272,7 @@ LONG gui_run(IssTrackerApp *app)
                 ReplyMsg((struct Message*)msg);
                 if(cls==IDCMP_CLOSEWINDOW) done=1;
                 else if(cls==IDCMP_REFRESHWINDOW || cls==IDCMP_NEWSIZE) draw_all(win,app);
-                else if(cls==IDCMP_MENUPICK){ if(MENUNUM(code)==MENU_SETTINGS && ITEMNUM(code)==ITEM_UPDATE_INTERVAL) open_interval_window(app,win); else if(MENUNUM(code)==MENU_HELP && ITEMNUM(code)==ITEM_INFO) open_info_window(app,win); }
+                else if(cls==IDCMP_MENUPICK){ if(MENUNUM(code)==MENU_SETTINGS && ITEMNUM(code)==ITEM_UPDATE_INTERVAL) open_interval_window(app,win); else if(MENUNUM(code)==MENU_SETTINGS && ITEMNUM(code)==ITEM_LANGUAGE) open_language_window(app,win); else if(MENUNUM(code)==MENU_HELP && ITEMNUM(code)==ITEM_INFO) open_info_window(app,win); }
                 else if(cls==IDCMP_INTUITICKS){
                     auto_ticks++;
                     blink_ticks++;
