@@ -62,7 +62,7 @@ static void set_status(IssTrackerApp *app, UBYTE st, const char *txt){ UWORD i; 
 static void append_num(char *b, UWORD *p, LONG n){ char t[12]; WORD i; WORD j; if(n<0){ b[(*p)++]='-'; n=-n; } i=0; do{ t[i++]=(char)('0'+(n%10)); n/=10; }while(n&&i<11); for(j=i-1;j>=0;j--) b[(*p)++]=t[j]; b[*p]=0; }
 static UWORD parse_minutes(const char *s){ ULONG v; v=0; while(*s==' ') s++; while(*s>='0' && *s<='9'){ v=(v*10)+(*s-'0'); if(v>120) return 120; s++; } if(v<1) v=1; if(v>120) v=120; return (UWORD)v; }
 static void draw_small_button(struct RastPort *rp, WORD x, WORD y, WORD w, WORD h, const char *label){ SetAPen(rp,1); RectFill(rp,x,y,x+w,y+h); SetAPen(rp,0); Move(rp,x+6,y+11); Text(rp,(STRPTR)label,strlen(label)); SetAPen(rp,3); Move(rp,x,y); Draw(rp,x+w,y); Draw(rp,x+w,y+h); Draw(rp,x,y+h); Draw(rp,x,y); }
-static void draw_interval_window(struct Window *w, IssTrackerApp *app, struct Gadget *g){ struct RastPort *rp; rp=w->RPort; SetDrMd(rp,JAM1); SetAPen(rp,0); RectFill(rp,0,0,w->Width-1,w->Height-1); SetAPen(rp,1); text_at(rp,10,18,txt_interval_head(app)); text_at(rp,10,40,txt_minutes(app)); SetAPen(rp,1); Move(rp,82,26); Draw(rp,132,26); Draw(rp,132,45); Draw(rp,82,45); Draw(rp,82,26); RefreshGList(g,w,0,1); draw_small_button(rp,48,58,42,16,"OK"); draw_small_button(rp,102,58,54,16,txt_cancel(app)); }
+static void draw_interval_window(struct Window *w, IssTrackerApp *app, struct Gadget *g){ struct RastPort *rp; rp=w->RPort; SetDrMd(rp,JAM1); SetAPen(rp,0); RectFill(rp,0,0,w->Width-1,w->Height-1); SetAPen(rp,1); text_at(rp,10,18,txt_interval_head(app)); text_at(rp,10,40,txt_minutes(app)); SetAPen(rp,1); Move(rp,112,26); Draw(rp,162,26); Draw(rp,162,45); Draw(rp,112,45); Draw(rp,112,26); RefreshGList(g,w,0,1); draw_small_button(rp,62,58,42,16,"OK"); draw_small_button(rp,116,58,62,16,txt_cancel(app)); }
 static void update_now(struct Window *win, IssTrackerApp *app)
 {
     IssPosition p;
@@ -222,7 +222,7 @@ static void open_interval_window(IssTrackerApp *app, struct Window *parent)
     si.UndoBuffer=(STRPTR)undo;
     si.MaxChars=4;
     si.LongInt=app->update_interval_min;
-    sg.LeftEdge=86;
+    sg.LeftEdge=116;
     sg.TopEdge=30;
     sg.Width=42;
     sg.Height=12;
@@ -233,7 +233,7 @@ static void open_interval_window(IssTrackerApp *app, struct Window *parent)
     memset(&nw,0,sizeof(nw));
     nw.LeftEdge=(WORD)(parent->LeftEdge+24);
     nw.TopEdge=(WORD)(parent->TopEdge+24);
-    nw.Width=184;
+    nw.Width=220;
     nw.Height=90;
     nw.DetailPen=0;
     nw.BlockPen=1;
@@ -246,7 +246,7 @@ static void open_interval_window(IssTrackerApp *app, struct Window *parent)
     if(!w){ strcpy(app->info_text,txt_interval_fail(app)); draw_panel(parent,app); return; }
     draw_interval_window(w,app,&sg);
     done=0;
-    while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_interval_window(w,app,&sg); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,48,58,42,16)){ app->update_interval_min=parse_minutes(buf); strcpy(app->info_text,txt_interval_changed(app)); draw_panel(parent,app); done=1; } else if(in_rect(mx,my,102,58,54,16)) done=1; } } } }
+    while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_interval_window(w,app,&sg); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,62,58,42,16)){ app->update_interval_min=parse_minutes(buf); strcpy(app->info_text,txt_interval_changed(app)); draw_panel(parent,app); done=1; } else if(in_rect(mx,my,116,58,62,16)) done=1; } } } }
     CloseWindow(w);
 }
 LONG gui_run(IssTrackerApp *app)
