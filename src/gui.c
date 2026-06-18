@@ -25,13 +25,13 @@
 #define ITEM_UPDATE_INTERVAL 0
 #define ITEM_LANGUAGE 1
 #define ITEM_INFO 0
-static struct IntuiText mi_quit_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Quit", 0 };
+static struct IntuiText mi_quit_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Quit", 0 };
 static struct MenuItem mi_quit = { 0, 0,0, 60,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_quit_text, 0, 0, 0, 0 };
-static struct IntuiText mi_update_interval_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
-static struct IntuiText mi_language_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Sprache...", 0 };
+static struct IntuiText mi_update_interval_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
+static struct IntuiText mi_language_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Sprache...", 0 };
 static struct MenuItem mi_language = { 0, 0,10, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_language_text, 0, 0, 0, 0 };
 static struct MenuItem mi_update_interval = { &mi_language, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
-static struct IntuiText mi_info_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Info", 0 };
+static struct IntuiText mi_info_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Info", 0 };
 static struct MenuItem mi_info = { 0, 0,0, 60,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_info_text, 0, 0, 0, 0 };
 static struct Menu menu_help = { 0, 204,0, 16,10, MENUENABLED, (UBYTE *)"?", &mi_info, 0,0,0,0 };
 static struct Menu menu_settings = { &menu_help, 72,0, 132,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
@@ -56,7 +56,7 @@ static UBYTE iss_over_europe(const IssPosition *p){ return (p->valid && p->lat_c
 static void apply_menu_texts(IssTrackerApp *app){ menu_project.MenuName=(UBYTE *)txt_project(app); mi_quit_text.IText=(STRPTR)txt_quit(app); menu_settings.MenuName=(UBYTE *)txt_settings(app); mi_update_interval_text.IText=(STRPTR)txt_interval(app); mi_language_text.IText=(STRPTR)txt_language(app); }
 static UWORD next_funfact_delay(IssTrackerApp *app){ app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)(FUNFACT_MIN_TICKS+(UWORD)((app->funfact_seed>>16)%FUNFACT_RANGE_TICKS)); }
 static UWORD next_funfact_index(IssTrackerApp *app){ UWORD count; count=funfact_count(); if(count==0) return 0; app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)((app->funfact_seed>>16)%count); }
-static void button_layout(struct Window *win, WORD *by){ WORD mw; WORD mh; mw=(WORD)(win->Width-22); if(mw<300) mw=300; mh=(WORD)((LONG)mw*200L/600L); if(mh>(WORD)(win->Height-104)) mh=(WORD)(win->Height-104); if(mh<100) mh=100; *by=(WORD)(18+mh+8); }
+static void button_layout(struct Window *win, WORD *bx, WORD *by){ WORD w; WORD h; WORD mw; WORD mh; w=(WORD)(win->Width-win->BorderLeft-win->BorderRight); h=(WORD)(win->Height-win->BorderTop-win->BorderBottom); mw=(WORD)(w-22); if(mw<300) mw=300; mh=(WORD)((LONG)mw*200L/600L); if(mh>(WORD)(h-104)) mh=(WORD)(h-104); if(mh<100) mh=100; *bx=(WORD)(win->BorderLeft+8); *by=(WORD)(win->BorderTop+18+mh+8); }
 static int in_rect(WORD mx, WORD my, WORD x, WORD y, WORD w, WORD h){ return mx>=x && mx<=x+w && my>=y && my<=y+h; }
 static void text_at(struct RastPort *rp, WORD x, WORD y, const char *s){ Move(rp,x,y); Text(rp,(STRPTR)s,strlen(s)); }
 static void set_status(IssTrackerApp *app, UBYTE st, const char *txt){ UWORD i; app->status=st; for(i=0;txt[i]&&i+1<sizeof(app->status_text);i++) app->status_text[i]=txt[i]; app->status_text[i]=0; }
@@ -314,10 +314,11 @@ LONG gui_run(IssTrackerApp *app)
                     if(status_ticks>=50){ status_ticks=0; if(!app->funfact_active){ if(app->current.valid){ if(app->status_page<1 || app->status_page>=3) app->status_page=1; else app->status_page=(UBYTE)(app->status_page+1); } else app->status_page=0; draw_panel(win,app); } }
                     if(auto_ticks>=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)){ auto_ticks=0; update_now(win,app); }
                 } else if(cls==IDCMP_MOUSEBUTTONS){
+                    WORD bx;
                     WORD by;
-                    button_layout(win,&by);
-                    if(in_rect(mx,my,8,by,BTN_W,BTN_H)){ auto_ticks=0; update_now(win,app); }
-                    else if(in_rect(mx,my,72,by,BTN_W,BTN_H)) info_now(win,app);
+                    button_layout(win,&bx,&by);
+                    if(in_rect(mx,my,bx,by,BTN_W,BTN_H)){ auto_ticks=0; update_now(win,app); }
+                    else if(in_rect(mx,my,(WORD)(bx+64),by,BTN_W,BTN_H)) info_now(win,app);
                 }
             }
         }
