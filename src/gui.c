@@ -281,7 +281,7 @@ LONG gui_run(IssTrackerApp *app)
                     blink_ticks++;
                     status_ticks++;
                     if(blink_ticks>=5){ blink_ticks=0; app->blink=(UBYTE)!app->blink; if(app->current.valid) draw_iss_blink(win,app); }
-                    if(status_ticks>=30){ status_ticks=0; if(app->current.valid){ if(app->status_page<1 || app->status_page>=3) app->status_page=1; else app->status_page=(UBYTE)(app->status_page+1); } else app->status_page=0; draw_panel(win,app); }
+                    if(status_ticks>=50){ status_ticks=0; if(app->current.valid){ if(app->status_page<1 || app->status_page>=3) app->status_page=1; else app->status_page=(UBYTE)(app->status_page+1); } else app->status_page=0; draw_panel(win,app); }
                     if(auto_ticks>=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)){ auto_ticks=0; update_now(win,app); }
                 } else if(cls==IDCMP_MOUSEBUTTONS){
                     WORD by;
