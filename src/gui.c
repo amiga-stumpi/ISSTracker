@@ -50,6 +50,7 @@ static const char *txt_interval_changed(IssTrackerApp *app){ if(app->language==I
 static const char *txt_interval_fail(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Intervall Fenster fehlgeschlagen"; if(app->language==ISS_LANG_PL) return "Okno interwalu blad"; return "Interval window failed"; }
 static const char *txt_language_title(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache"; if(app->language==ISS_LANG_PL) return "Jezyk"; return "Language"; }
 static const char *txt_language_changed(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Sprache geaendert"; if(app->language==ISS_LANG_PL) return "Jezyk zmieniony"; return "Language changed"; }
+static const char *txt_prepare_network(IssTrackerApp *app){ if(app->language==ISS_LANG_DE) return "Bereite Netzwerk vor..."; if(app->language==ISS_LANG_PL) return "Przygotowuje siec..."; return "Preparing network..."; }
 static void apply_menu_texts(IssTrackerApp *app){ menu_project.MenuName=(UBYTE *)txt_project(app); mi_quit_text.IText=(STRPTR)txt_quit(app); menu_settings.MenuName=(UBYTE *)txt_settings(app); mi_update_interval_text.IText=(STRPTR)txt_interval(app); mi_language_text.IText=(STRPTR)txt_language(app); }
 static UWORD next_funfact_delay(IssTrackerApp *app){ app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)(FUNFACT_MIN_TICKS+(UWORD)((app->funfact_seed>>16)%FUNFACT_RANGE_TICKS)); }
 static UWORD next_funfact_index(IssTrackerApp *app){ UWORD count; count=funfact_count(); if(count==0) return 0; app->funfact_seed=(app->funfact_seed*1103515245UL)+12345UL; return (UWORD)((app->funfact_seed>>16)%count); }
@@ -270,11 +271,13 @@ LONG gui_run(IssTrackerApp *app)
     if(!win){ nw.LeftEdge=0; nw.TopEdge=0; nw.Width=nw.MinWidth; nw.Height=nw.MinHeight; win=OpenWindow(&nw); if(!win) return -1; }
     apply_menu_texts(app);
     SetMenuStrip(win,&menu_project);
+    strcpy(app->info_text,txt_prepare_network(app));
+    app->status_page=0;
     draw_all(win,app);
     done=0;
     if(app->funfact_seed==0) app->funfact_seed=(ULONG)win ^ 0x13572468UL;
     if(app->funfact_next_ticks==0) app->funfact_next_ticks=next_funfact_delay(app);
-    auto_ticks=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)-1;
+    auto_ticks=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)-50;
     blink_ticks=0;
     status_ticks=0;
     while(!done){
