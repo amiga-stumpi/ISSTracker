@@ -16,8 +16,8 @@
 #define AUTO_TICKS_PER_MIN 600UL
 #define MENU_SETTINGS 0
 #define ITEM_UPDATE_INTERVAL 0
-static struct IntuiText mi_update_interval_text = { 1,0,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
-static struct MenuItem mi_update_interval = { 0, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHCOMP, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
+static struct IntuiText mi_update_interval_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Update Interval...", 0 };
+static struct MenuItem mi_update_interval = { 0, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
 static struct Menu menu_settings = { 0, 0,0, 70,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
 static void button_layout(struct Window *win, WORD *by){ WORD mh; mh=(WORD)(win->Height-88); if(mh<80) mh=80; *by=(WORD)(18+mh+8); }
 static int in_rect(WORD mx, WORD my, WORD x, WORD y, WORD w, WORD h){ return mx>=x && mx<=x+w && my>=y && my<=y+h; }
