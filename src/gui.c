@@ -200,8 +200,6 @@ static void open_language_window(IssTrackerApp *app, struct Window *parent)
     while(!done){ ULONG sig; sig=Wait(1UL<<w->UserPort->mp_SigBit); if(sig&(1UL<<w->UserPort->mp_SigBit)){ struct IntuiMessage *msg; while((msg=(struct IntuiMessage *)GetMsg(w->UserPort))){ ULONG cls; WORD mx; WORD my; cls=msg->Class; mx=msg->MouseX; my=msg->MouseY; ReplyMsg((struct Message *)msg); if(cls==IDCMP_CLOSEWINDOW) done=1; else if(cls==IDCMP_REFRESHWINDOW) draw_language_window(w,app); else if(cls==IDCMP_MOUSEBUTTONS){ if(in_rect(mx,my,18,34,70,16)){ app->language=ISS_LANG_DE; done=1; } else if(in_rect(mx,my,98,34,70,16)){ app->language=ISS_LANG_EN; done=1; } else if(in_rect(mx,my,58,58,70,16)){ app->language=ISS_LANG_PL; done=1; } } } } }
     CloseWindow(w);
     apply_menu_texts(app);
-    ClearMenuStrip(parent);
-    SetMenuStrip(parent,&menu_project);
     strcpy(app->info_text,txt_language_changed(app));
     draw_panel(parent,app);
 }
