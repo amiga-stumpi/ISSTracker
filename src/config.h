@@ -3,5 +3,5 @@
 #include "app.h"
 void config_defaults(IssTrackerApp *app);
 void config_load(IssTrackerApp *app);
-void config_save_window(WORD left, WORD top, WORD width, WORD height);
+void config_save(IssTrackerApp *app);
 #endif
