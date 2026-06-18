@@ -1,0 +1,3 @@
+#include "map_projection.h"
+void iss_project_equirect(WORD lat_cd, WORD lon_cd, WORD x, WORD y, WORD w, WORD h, WORD *px, WORD *py) { LONG xx; LONG yy; xx = (LONG)(lon_cd + 18000) * (LONG)(w - 1) / 36000L; yy = (LONG)(9000 - lat_cd) * (LONG)(h - 1) / 18000L; *px = (WORD)(x + xx); *py = (WORD)(y + yy); }
+void iss_unproject_equirect(WORD px, WORD py, WORD x, WORD y, WORD w, WORD h, WORD *lat_cd, WORD *lon_cd) { LONG lx; LONG ly; lx = px - x; ly = py - y; if (lx < 0) lx = 0; if (ly < 0) ly = 0; if (lx >= w) lx = w - 1; if (ly >= h) ly = h - 1; *lon_cd = (WORD)((lx * 36000L) / (w - 1) - 18000L); *lat_cd = (WORD)(9000L - (ly * 18000L) / (h - 1)); }

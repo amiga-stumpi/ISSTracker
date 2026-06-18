@@ -1,0 +1,6 @@
+#ifndef ISS_DRAW_H
+#define ISS_DRAW_H
+#include <intuition/intuition.h>
+#include "app.h"
+void draw_all(struct Window *win, IssTrackerApp *app);
+#endif
