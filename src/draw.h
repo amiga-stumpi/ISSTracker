@@ -3,6 +3,7 @@
 #include <intuition/intuition.h>
 #include "app.h"
 void draw_all(struct Window *win, IssTrackerApp *app);
+void draw_side_panel(struct Window *win, IssTrackerApp *app);
 void draw_panel(struct Window *win, IssTrackerApp *app);
 void draw_iss_blink(struct Window *win, IssTrackerApp *app);
 #endif

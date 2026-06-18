@@ -55,6 +55,7 @@ static void update_now(struct Window *win, IssTrackerApp *app)
         set_status(app,ISS_STATUS_ONLINE,"ONLINE");
         strcpy(app->info_text,"ISS position updated");
         draw_iss_blink(win,app);
+        draw_side_panel(win,app);
         draw_panel(win,app);
     } else {
         set_status(app,ISS_STATUS_ERROR,"ERROR");
@@ -201,8 +202,7 @@ LONG gui_run(IssTrackerApp *app)
                     if(in_rect(mx,my,8,by,BTN_W,BTN_H)) update_now(win,app);
                     else if(in_rect(mx,my,72,by,BTN_W,BTN_H)){ app->auto_update=(UBYTE)!app->auto_update; auto_ticks=0; draw_panel(win,app); }
                     else if(in_rect(mx,my,136,by,BTN_W,BTN_H)) info_now(win,app);
-                    else if(in_rect(mx,my,200,by,BTN_W,BTN_H)){ app->show_trail=(UBYTE)!app->show_trail; draw_all(win,app); }
-                    else if(in_rect(mx,my,264,by,BTN_W,BTN_H)) done=1;
+                    else if(in_rect(mx,my,200,by,BTN_W,BTN_H)) done=1;
                 }
             }
         }
