@@ -56,7 +56,6 @@ static void update_now(struct Window *win, IssTrackerApp *app)
         set_status(app,ISS_STATUS_ONLINE,"ONLINE");
         strcpy(app->info_text,"ISS position updated");
         draw_iss_blink(win,app);
-        draw_side_panel(win,app);
         draw_panel(win,app);
     } else {
         set_status(app,ISS_STATUS_ERROR,"ERROR");
@@ -174,6 +173,7 @@ LONG gui_run(IssTrackerApp *app)
     ULONG sig;
     ULONG auto_ticks;
     UWORD blink_ticks;
+    UWORD status_ticks;
     WORD done;
     memset(&nw,0,sizeof(nw));
     nw.LeftEdge=app->win_left;
@@ -197,6 +197,7 @@ LONG gui_run(IssTrackerApp *app)
     done=0;
     auto_ticks=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)-1;
     blink_ticks=0;
+    status_ticks=0;
     while(!done){
         sig=Wait(1UL<<win->UserPort->mp_SigBit);
         if(sig&(1UL<<win->UserPort->mp_SigBit)){
@@ -217,7 +218,9 @@ LONG gui_run(IssTrackerApp *app)
                 else if(cls==IDCMP_INTUITICKS){
                     auto_ticks++;
                     blink_ticks++;
+                    status_ticks++;
                     if(blink_ticks>=5){ blink_ticks=0; app->blink=(UBYTE)!app->blink; if(app->current.valid) draw_iss_blink(win,app); }
+                    if(status_ticks>=30){ status_ticks=0; app->status_page=(UBYTE)((app->status_page+1)%4); draw_panel(win,app); }
                     if(auto_ticks>=((ULONG)app->update_interval_min*AUTO_TICKS_PER_MIN)){ auto_ticks=0; update_now(win,app); }
                 } else if(cls==IDCMP_MOUSEBUTTONS){
                     WORD by;
