@@ -33,8 +33,8 @@ static struct MenuItem mi_language = { 0, 0,10, 160,10, ITEMTEXT|ITEMENABLED|HIG
 static struct MenuItem mi_update_interval = { &mi_language, 0,0, 160,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_update_interval_text, 0, 0, 0, 0 };
 static struct IntuiText mi_info_text = { 0,1,JAM1, 0,1, 0, (UBYTE *)"Info", 0 };
 static struct MenuItem mi_info = { 0, 0,0, 60,10, ITEMTEXT|ITEMENABLED|HIGHBOX, 0, (APTR)&mi_info_text, 0, 0, 0, 0 };
-static struct Menu menu_help = { 0, 176,0, 16,10, MENUENABLED, (UBYTE *)"?", &mi_info, 0,0,0,0 };
-static struct Menu menu_settings = { &menu_help, 72,0, 104,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
+static struct Menu menu_help = { 0, 204,0, 16,10, MENUENABLED, (UBYTE *)"?", &mi_info, 0,0,0,0 };
+static struct Menu menu_settings = { &menu_help, 72,0, 132,10, MENUENABLED, (UBYTE *)"Settings", &mi_update_interval, 0,0,0,0 };
 static struct Menu menu_project = { &menu_settings, 0,0, 72,10, MENUENABLED, (UBYTE *)"Projekt", &mi_quit, 0,0,0,0 };
 static const char *txt_project(IssTrackerApp *app){ if(app->language==ISS_LANG_EN) return "Project"; if(app->language==ISS_LANG_PL) return "Projekt"; return "Projekt"; }
 static const char *txt_quit(IssTrackerApp *app){ if(app->language==ISS_LANG_PL) return "Zakoncz"; return "Quit"; }
