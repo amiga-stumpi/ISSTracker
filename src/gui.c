@@ -132,7 +132,7 @@ static void draw_info_window(struct Window *w)
     RectFill(rp,0,0,w->Width-1,w->Height-1);
     SetAPen(rp,1);
     text_at(rp,12,18,"ISSTracker live for Kick1.3");
-    text_at(rp,12,32,"Version: v1.0");
+    text_at(rp,12,32,"Version: v1.3.0");
     text_at(rp,12,46,"by Marcel Jaehne");
     text_at(rp,12,60,"(c) 2026");
     text_at(rp,12,76,"If you want to buy me a coffe,");
