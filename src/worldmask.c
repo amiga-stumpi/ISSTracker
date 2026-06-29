@@ -1,84 +1,68 @@
 #include "app.h"
 #include "worldmask.h"
-typedef struct Rect { WORD lat1,lat2,lon1,lon2; } Rect;
-static const Rect land_rects[] = {
-    {5900,8300,-7400,-1200},
-    {5100,7200,-17000,-5200},
-    {2400,5100,-12500,-6600},
-    {1500,3300,-11800,-8200},
-    {700,2300,-10600,-7600},
-    {800,2400,-8500,-5900},
-    {-5600,1300,-8200,-3500},
-    {-5400,-3500,-7300,-5300},
-    {3500,7200,-1100,4500},
-    {3600,7100,4500,6500},
-    {3500,4200,-1000,3000},
-    {5200,7100,-900,3200},
-    {3600,6900,1200,3400},
-    {-3500,3700,-1800,5200},
-    {-3500,1200,800,5200},
-    {-3500,-2200,1600,3400},
-    {1200,3300,3400,6000},
-    {2400,4200,4400,6500},
-    {2500,4100,5900,7500},
-    {600,3600,6800,9000},
-    {500,3000,7800,9200},
-    {600,2800,8800,10000},
-    {500,2400,9500,10800},
-    {-1200,2300,9500,11000},
-    {-1000,800,10800,12000},
-    {-700,1800,11800,12600},
-    {1800,5400,7300,10400},
-    {1800,5200,10000,12400},
-    {2000,5400,11800,13400},
-    {3500,5600,4500,9000},
-    {4500,7200,3000,9000},
-    {5000,7200,9000,14000},
-    {4300,7000,12500,17000},
-    {2200,4600,12500,14600},
-    {3000,4600,12900,14600},
-    {2400,4600,13900,14600},
-    {-1100,600,9500,14100},
-    {-1200,200,10500,12500},
-    {-1100,200,12000,14200},
-    {-1100,200,12800,14200},
-    {-1000,600,14000,15500},
-    {-4700,-1000,11000,15500},
-    {-4400,-1000,13500,15500},
-    {-4700,-3400,16500,18000},
-    {-4700,-3400,-18000,-16600},
-    {-2300,-1300,-15200,-13800},
-    {-2200,-1200,16500,18000},
-    {-2200,-1200,-18000,-17000},
-    {-9000,-6500,-18000,18000}
-};
-static const Rect water_rects[] = {
-    {2200,5000,-17000,-12600},
-    {2300,5000,-6500,-2000},
-    {-5600,1000,-3500,2000},
-    {-6000,-3500,-4500,2000},
-    {-6000,-3500,2000,18000},
-    {-6000,-3500,-18000,-8000},
-    {-4500,3500,5200,9000},
-    {-3500,500,5200,9500},
-    {0,2600,11000,12000},
-    {1800,3600,12000,12500},
-    {2500,4200,13200,13800},
-    {2300,4200,14500,18000},
-    {2300,4200,-18000,-12500},
-    {1000,3000,13000,18000},
-    {1000,3000,-18000,-12000},
-    {-1000,1000,15000,18000},
-    {-1000,1000,-18000,-9000},
-    {3000,4600,-900,3700},
-    {4100,4700,1200,3000},
-    {4300,4600,3500,4200},
-    {1200,3000,3200,4400},
-    {1200,3000,5200,6100},
-    {500,1800,4200,5200},
-    {500,1800,9000,9800},
-    {4000,4700,5000,5800}
-};
-static int in_rect(WORD lat_cd, WORD lon_cd, const Rect *r){ return lat_cd>=r->lat1 && lat_cd<=r->lat2 && lon_cd>=r->lon1 && lon_cd<=r->lon2; }
-static int near_edge(WORD lat_cd, WORD lon_cd, const Rect *r, WORD margin){ return lat_cd<r->lat1+margin || lat_cd>r->lat2-margin || lon_cd<r->lon1+margin || lon_cd>r->lon2-margin; }
-UBYTE worldmask_classify(WORD lat_cd, WORD lon_cd){ UWORD i; const Rect *hit; for(i=0;i<sizeof(water_rects)/sizeof(water_rects[0]);i++){ if(in_rect(lat_cd,lon_cd,&water_rects[i])){ if(near_edge(lat_cd,lon_cd,&water_rects[i],50)) return ISS_SURFACE_COAST; return ISS_SURFACE_WATER; } } hit=0; for(i=0;i<sizeof(land_rects)/sizeof(land_rects[0]);i++){ if(in_rect(lat_cd,lon_cd,&land_rects[i])){ hit=&land_rects[i]; break; } } if(!hit) return ISS_SURFACE_WATER; if(near_edge(lat_cd,lon_cd,hit,200)) return ISS_SURFACE_COAST; return ISS_SURFACE_LAND; }
+#include "map_image.h"
+
+#define WM_SRC_DEPTH 4
+#define WM_WATER_PEN 2
+
+static WORD clamp_word(WORD v, WORD lo, WORD hi)
+{
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}
+
+static void coord_to_map_pixel(WORD lat_cd, WORD lon_cd, WORD *x_out, WORD *y_out)
+{
+    LONG x;
+    LONG y;
+
+    if (lat_cd < -9000) lat_cd = -9000;
+    if (lat_cd > 9000) lat_cd = 9000;
+    while (lon_cd < -18000) lon_cd = (WORD)(lon_cd + 36000);
+    while (lon_cd > 18000) lon_cd = (WORD)(lon_cd - 36000);
+
+    x = (((LONG)lon_cd + 18000L) * (LONG)ISS_MAP_SRC_W) / 36000L;
+    y = ((9000L - (LONG)lat_cd) * (LONG)ISS_MAP_SRC_H) / 18000L;
+
+    *x_out = clamp_word((WORD)x, 0, (WORD)(ISS_MAP_SRC_W - 1));
+    *y_out = clamp_word((WORD)y, 0, (WORD)(ISS_MAP_SRC_H - 1));
+}
+
+static UBYTE map_pixel_is_water(WORD x, WORD y)
+{
+    return (iss_map_get_pen(WM_SRC_DEPTH, x, y) == WM_WATER_PEN) ? 1 : 0;
+}
+
+UBYTE worldmask_classify(WORD lat_cd, WORD lon_cd)
+{
+    WORD x;
+    WORD y;
+    WORD dx;
+    WORD dy;
+    UWORD water;
+    UWORD land;
+
+    coord_to_map_pixel(lat_cd, lon_cd, &x, &y);
+
+    water = 0;
+    land = 0;
+    for (dy = -2; dy <= 2; ++dy) {
+        for (dx = -2; dx <= 2; ++dx) {
+            WORD sx;
+            WORD sy;
+            sx = clamp_word((WORD)(x + dx), 0, (WORD)(ISS_MAP_SRC_W - 1));
+            sy = clamp_word((WORD)(y + dy), 0, (WORD)(ISS_MAP_SRC_H - 1));
+            if (map_pixel_is_water(sx, sy))
+                ++water;
+            else
+                ++land;
+        }
+    }
+
+    if (land >= 18)
+        return ISS_SURFACE_LAND;
+    if (water >= 18)
+        return ISS_SURFACE_WATER;
+    return ISS_SURFACE_COAST;
+}
