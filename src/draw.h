@@ -5,5 +5,4 @@
 void draw_all(struct Window *win, IssTrackerApp *app);
 void draw_panel(struct Window *win, IssTrackerApp *app);
 void draw_iss_blink(struct Window *win, IssTrackerApp *app);
-void draw_button_layout(struct Window *win, WORD *bx, WORD *by);
 #endif
